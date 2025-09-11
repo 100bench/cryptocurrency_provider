@@ -15,7 +15,7 @@ type RatesPublisher interface {
 
 type Service struct {
 	prov     priceProvider
-	pub      RatesPublisher
+	pub      RatesPublisher // сует в kafka (так предпологается)
 	currency string
 }
 
@@ -28,9 +28,5 @@ func (s *Service) Run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	err = s.pub.Publish(ctx, rates)
-	if err != nil {
-		return err
-	}
-	return nil
+	return s.pub.Publish(ctx, rates)
 }

@@ -19,7 +19,7 @@ type Service struct {
 	currency string
 }
 
-func newService(prov priceProvider, pub RatesPublisher, currency string) *Service {
+func NewService(prov priceProvider, pub RatesPublisher, currency string) *Service {
 	return &Service{prov, pub, currency}
 }
 

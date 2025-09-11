@@ -13,7 +13,7 @@ type Storage interface {
 	//GetMin24h(ctx context.Context, currencies []string) ([]en.Rate, error)
 	//GetAvg24h(ctx context.Context, currencies []string) ([]en.Rate, error)
 	// Заменил на GetStats, получаем сразу три метода, через мапу смотрим то, что нам надо
-	GetStats(ctx, currencies []string) (map[string]en.Stats, error)
+	GetStats(ctx context.Context, currencies []string) (map[string]en.Stats, error)
 }
 
 type StoreToClient struct {
@@ -24,11 +24,15 @@ func NewStoreToClient(store Storage) *StoreToClient {
 	return &StoreToClient{store}
 }
 
-func (r *StoreToClient) GetFromStorage(ctx context.Context, currencies []string) ([]en.Rate, error) {
+func (r *StoreToClient) GetCurrent(ctx context.Context, currencies []string) ([]en.Rate, error) {
 	rates, err := r.store.GetList(ctx, currencies)
 	if err != nil {
 		return nil, err
 	}
 
 	return rates, nil
+}
+
+func (r *StoreToClient) GetListStats(ctx context.Context, currencies []string) (map[string]en.Stats, error) {
+	return r.store.GetStats(ctx, currencies)
 }

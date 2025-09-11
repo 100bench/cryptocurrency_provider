@@ -23,6 +23,6 @@ func NewRepository(db *sqlx.DB, redis *redis.Client) Irate {
 }
 
 func (r *rates) Get(ctx context.Context, currencies []string) ([]en.Rate, error) {
-	// тут я делаю запрос в редис, если там нет или ошибка, то я иду в бд
+	// тут я делаю запрос в редис, если там нет или ошибка, то я иду в бд, кладу в редис и потом возращаю клиенту.
 	return nil, nil
 }

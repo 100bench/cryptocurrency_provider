@@ -6,7 +6,10 @@ import (
 )
 
 type Storage interface {
-	Get(ctx context.Context, currencies []string) ([]en.Rate, error)
+	GetList(ctx context.Context, currencies []string) ([]en.Rate, error) // ?
+	GetMax24h(ctx context.Context, currencies []string) ([]en.Rate, error)
+	GetMin24h(ctx context.Context, currencies []string) ([]en.Rate, error)
+	GetAvg24h(ctx context.Context, currencies []string) ([]en.Rate, error)
 }
 
 type StoreToClient struct {
@@ -18,7 +21,7 @@ func NewStoreToClient(store Storage) *StoreToClient {
 }
 
 func (r *StoreToClient) Run(ctx context.Context, currencies []string) ([]en.Rate, error) {
-	rates, err := r.store.Get(ctx, currencies)
+	rates, err := r.store.GetList(ctx, currencies)
 	if err != nil {
 		return nil, err
 	}

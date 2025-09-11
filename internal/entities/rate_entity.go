@@ -16,18 +16,21 @@ type Rate struct {
 
 func NewRate(currency string, price float64, currentTime time.Time) (Rate, error) {
 	c := strings.TrimSpace(currency)
-	// проверка длины (3 символа)
+	// code(string) check
 	if len(c) != 3 {
 		return Rate{}, fmt.Errorf("invalid currency length: %q", c)
 	}
-	// приведение к верхнему регистру
 	upperCur := strings.ToUpper(c)
-	// проверка, что только латинские буквы
 	if !regexp.MustCompile(`^[A-Z]{3}$`).MatchString(upperCur) {
 		return Rate{}, fmt.Errorf("invalid currency format: %q", c)
 	}
+	// price check
 	if price <= 0 {
 		return Rate{}, fmt.Errorf("invalid price: %q", price)
+	}
+	// if time in future
+	if currentTime.After(time.Now()) {
+		return Rate{}, fmt.Errorf("invalid current time: %q", currentTime)
 	}
 	return Rate{upperCur, price, currentTime, 0}, nil
 }

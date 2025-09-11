@@ -23,7 +23,7 @@ func NewService(prov priceProvider, pub RatesPublisher, currency string) *Servic
 	return &Service{prov, pub, currency}
 }
 
-func (s *Service) Run(ctx context.Context) error {
+func (s *Service) GetRates(ctx context.Context) error {
 	rates, err := s.prov.GetRates(ctx, s.currency)
 	if err != nil {
 		return err

@@ -2,4 +2,8 @@ package cases
 
 import "errors"
 
-var ErrNilDependency = errors.New("nil dependency")
+var (
+	ErrNilStorage   = errors.New("nil Storage dependency")
+	ErrNilProvider  = errors.New("nil PriceProvider dependency")
+	ErrNilPublisher = errors.New("nil RatesPublisher dependency")
+)

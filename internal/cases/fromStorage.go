@@ -2,6 +2,7 @@ package cases
 
 import (
 	"context"
+	"fmt"
 	en "github.com/100bench/cryptocurrency_provider.git/internal/entities"
 )
 
@@ -22,7 +23,7 @@ type StoreToClient struct {
 
 func NewStoreToClient(store Storage) (*StoreToClient, error) {
 	if store == nil {
-		return nil, ErrNilDependency
+		return nil, ErrNilStorage
 	}
 	return &StoreToClient{store}, nil
 }
@@ -30,12 +31,16 @@ func NewStoreToClient(store Storage) (*StoreToClient, error) {
 func (r *StoreToClient) GetCurrent(ctx context.Context, currencies []string) ([]en.Rate, error) {
 	rates, err := r.store.GetList(ctx, currencies)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("usecase StoreToClient.GetCurrent: get current for currencies=%v: %w", currencies, err)
 	}
 
 	return rates, nil
 }
 
 func (r *StoreToClient) GetListStats(ctx context.Context, currencies []string) (map[string]en.Stats, error) {
-	return r.store.GetStats(ctx, currencies)
+	stats, err := r.store.GetStats(ctx, currencies)
+	if err != nil {
+		return nil, fmt.Errorf("usecase StoreToClient.GetListStats: get stats for currencies=%v: %w", currencies, err)
+	}
+	return stats, nil
 }

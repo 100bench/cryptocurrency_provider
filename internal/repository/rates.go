@@ -15,11 +15,17 @@ type rates struct {
 	redis    *redis.Client
 }
 
-func NewRepository(db *sqlx.DB, redis *redis.Client) Irate {
+func NewRepository(db *sqlx.DB, redis *redis.Client) (Irate, error) {
+	if db == nil {
+		return nil, ErrDbNil
+	}
+	if redis == nil {
+		return nil, ErrRedisIsNil
+	}
 	return &rates{
 		postgres: db,
 		redis:    redis,
-	}
+	}, nil
 }
 
 func (r *rates) Get(ctx context.Context, currencies []string) ([]en.Rate, error) {

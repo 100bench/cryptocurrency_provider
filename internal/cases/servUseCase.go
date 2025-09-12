@@ -2,6 +2,7 @@ package cases
 
 import (
 	"context"
+	"fmt"
 	en "github.com/100bench/cryptocurrency_provider.git/internal/entities"
 )
 
@@ -21,10 +22,10 @@ type Service struct {
 
 func NewService(prov PriceProvider, pub RatesPublisher, currency string) (*Service, error) {
 	if prov == nil {
-		return nil, ErrNilDependency
+		return nil, ErrNilProvider
 	}
 	if pub == nil {
-		return nil, ErrNilDependency
+		return nil, ErrNilPublisher
 	}
 	return &Service{prov, pub, currency}, nil
 }
@@ -32,7 +33,7 @@ func NewService(prov PriceProvider, pub RatesPublisher, currency string) (*Servi
 func (s *Service) GetRates(ctx context.Context) error {
 	rates, err := s.prov.GetRates(ctx, s.currency)
 	if err != nil {
-		return err
+		return fmt.Errorf("usecase Service.prov.GetRates: get rates for currencies=%v: %w", s.currency, err)
 	}
 	return s.pub.Publish(ctx, rates)
 }

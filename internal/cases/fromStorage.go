@@ -20,8 +20,11 @@ type StoreToClient struct {
 	store Storage
 }
 
-func NewStoreToClient(store Storage) *StoreToClient {
-	return &StoreToClient{store}
+func NewStoreToClient(store Storage) (*StoreToClient, error) {
+	if store == nil {
+		return nil, ErrNilDependency
+	}
+	return &StoreToClient{store}, nil
 }
 
 func (r *StoreToClient) GetCurrent(ctx context.Context, currencies []string) ([]en.Rate, error) {

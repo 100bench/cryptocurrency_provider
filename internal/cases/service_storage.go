@@ -23,7 +23,7 @@ type StoreToClient struct {
 
 func NewStoreToClient(store Storage) (*StoreToClient, error) {
 	if store == nil {
-		return nil, ErrNilStorage
+		return nil, en.ErrNilDependency
 	}
 	return &StoreToClient{store}, nil
 }

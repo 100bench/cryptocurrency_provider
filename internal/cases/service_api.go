@@ -3,29 +3,31 @@ package cases
 import (
 	"context"
 	"fmt"
+	en "github.com/100bench/cryptocurrency_provider.git/internal/entities"
+	"github.com/pkg/errors"
 )
 
 type ServiceAPI struct {
-	prov Client
-	pub  Broker // сует в kafka (так предпологается)
+	client Client
+	broker Broker // сует в kafka (так предпологается)
 }
 
-func NewService(prov Client, pub Broker, currency string) (*ServiceAPI, error) {
+func NewServiceAPI(prov Client, pub Broker) (*ServiceAPI, error) {
 	if prov == nil {
-		return nil, ErrNilProvider
+		return nil, errors.Wrap(en.ErrNilDependency, "client")
 	}
 	if pub == nil {
-		return nil, ErrNilPublisher
+		return nil, errors.Wrap(en.ErrNilDependency, "broker")
 	}
-	return &ServiceAPI{prov, pub, currency}, nil
+	return &ServiceAPI{prov, pub}, nil
 }
 
 func (s *ServiceAPI) ProduceToBroker(ctx context.Context, currencies []string) error {
-	rates, err := s.prov.GetRates(ctx, currencies)
+	rates, err := s.client.GetRates(ctx, currencies)
 	if err != nil {
 		return fmt.Errorf("usecase Service.prov.GetRates: get rates for currencies=%v: %w", currencies, err)
 	}
-	err = s.pub.Publish(ctx, rates)
+	err = s.broker.Publish(ctx, rates)
 	if err != nil {
 		return fmt.Errorf("usecase Service.pub.Produce: produce rates for currencies=%v: %w", currencies, err)
 	}

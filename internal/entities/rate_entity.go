@@ -15,14 +15,13 @@ type Rate struct {
 }
 
 func NewRate(currency string, price float64, currentTime time.Time) (Rate, error) {
-	c := strings.TrimSpace(currency)
 	// code(string) check
-	if len(c) != 3 {
-		return Rate{}, fmt.Errorf("invalid currency length: %q", c)
+	if len(currency) != 3 {
+		return Rate{}, fmt.Errorf("invalid currency length: %q", currency)
 	}
-	upperCur := strings.ToUpper(c)
+	upperCur := strings.ToUpper(currency)
 	if !regexp.MustCompile(`^[A-Z]{3}$`).MatchString(upperCur) {
-		return Rate{}, fmt.Errorf("invalid currency format: %q", c)
+		return Rate{}, fmt.Errorf("invalid currency format: %q", currency)
 	}
 	// price check
 	if price <= 0 {

@@ -7,6 +7,6 @@ type Stats struct {
 	Lst float64
 }
 
-func NewStats(min float64, max float64, avg float64) (*Stats, error) {
-	return Stats{min, max, avg}, nil
+func NewStats(min float64, max float64, avg float64, lst float64) (*Stats, error) {
+	return &Stats{min, max, avg, lst}, nil
 }

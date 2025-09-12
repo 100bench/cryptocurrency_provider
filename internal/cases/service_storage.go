@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	en "github.com/100bench/cryptocurrency_provider.git/internal/entities"
+	"github.com/pkg/errors"
 )
 
 type Storage interface {
@@ -23,7 +24,7 @@ type StoreToClient struct {
 
 func NewStoreToClient(store Storage) (*StoreToClient, error) {
 	if store == nil {
-		return nil, en.ErrNilDependency
+		return nil, errors.Wrap(en.ErrNilDependency, "storage")
 	}
 	return &StoreToClient{store}, nil
 }

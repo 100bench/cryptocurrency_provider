@@ -1,0 +1,39 @@
+package cases
+
+import (
+	"context"
+	"fmt"
+	en "github.com/100bench/cryptocurrency_provider.git/internal/entities"
+)
+
+type PriceProvider interface {
+	GetRates(ctx context.Context, currency string) (Rates []en.Rate, err error)
+}
+
+type RatesPublisher interface {
+	Publish(ctx context.Context, rates []en.Rate) error
+}
+
+type Service struct {
+	prov     PriceProvider
+	pub      RatesPublisher // сует в kafka (так предпологается)
+	currency string
+}
+
+func NewService(prov PriceProvider, pub RatesPublisher, currency string) (*Service, error) {
+	if prov == nil {
+		return nil, ErrNilProvider
+	}
+	if pub == nil {
+		return nil, ErrNilPublisher
+	}
+	return &Service{prov, pub, currency}, nil
+}
+
+func (s *Service) GetRates(ctx context.Context) error {
+	rates, err := s.prov.GetRates(ctx, s.currency)
+	if err != nil {
+		return fmt.Errorf("usecase Service.prov.GetRates: get rates for currencies=%v: %w", s.currency, err)
+	}
+	return s.pub.Publish(ctx, rates)
+}

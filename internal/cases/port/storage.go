@@ -14,4 +14,6 @@ type Storage interface {
 	//GetAvg24h(ctx context.Context, currencies []string) ([]en.Rate, error)
 	// Заменил на GetStats, получаем сразу три метода, через мапу смотрим то, что нам надо
 	GetStats(ctx context.Context, currencies []string) (map[string]en.Stats, error)
+
+	Save(ctx context.Context, rateChan <-chan en.Rate) error
 }

@@ -12,7 +12,7 @@ type StoreToClient struct {
 	store port.Storage
 }
 
-func NewStoreToClient(store Storage) (*StoreToClient, error) {
+func NewStoreToClient(store port.Storage) (*StoreToClient, error) {
 	if store == nil {
 		return nil, errors.Wrap(en.ErrNilDependency, "storage")
 	}

@@ -13,3 +13,4 @@ CREATE TABLE rates (
     created_at  timestamptz NOT NULL DEFAULT now(),
     UNIQUE (base_code, ts)                                 -- идемпотентность по времени
 );
+

@@ -54,7 +54,6 @@ func (c *ClientCoinDesk) GetRates(ctx context.Context, currencies []string) ([]e
 		return nil, fmt.Errorf("create request: %w", err)
 	}
 
-	// ключ лучше в заголовок
 	if c.apiKey != "" {
 		req.Header.Set("Authorization", "Apikey "+c.apiKey)
 	}
@@ -68,14 +67,17 @@ func (c *ClientCoinDesk) GetRates(ctx context.Context, currencies []string) ([]e
 		b, _ := io.ReadAll(io.LimitReader(resp.Body, 4<<10))
 		return nil, errors.Wrapf(en.ErrProviderUnavailable, "cryptocompare status=%d body=%s", resp.StatusCode, string(b))
 	}
+
 	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "provider cryptocompare: read body")
 	}
+
 	var raw map[string]map[string]float64
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return nil, errors.Wrap(err, "cryptocompare: decode json")
 	}
+	
 	rates := make([]en.Rate, 0, len(raw))
 	ts := time.Now().UTC()
 

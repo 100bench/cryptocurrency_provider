@@ -77,13 +77,13 @@ func (c *ClientCoinDesk) GetRates(ctx context.Context, currencies []string) ([]e
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return nil, errors.Wrap(err, "cryptocompare: decode json")
 	}
-	
+
 	rates := make([]en.Rate, 0, len(raw))
 	ts := time.Now().UTC()
 
 	for k, v := range raw {
 		for _, vv := range v {
-			rate, err := en.NewRate(k, vv, ts, 0)
+			rate, err := en.NewRate(k, vv, ts)
 			if err != nil {
 				return nil, fmt.Errorf("cryptocompare: new rate: %w", err)
 			}

@@ -35,7 +35,7 @@ func NewClientCoinDesk(httpClient *http.Client, baseURL, apiKey string) (*Client
 	}, nil
 }
 
-func (c *ClientCoinDesk) GetRates(ctx context.Context, currencies []string) ([]en.Rate, error) {
+func (c *ClientCoinDesk) GetRatesFromClient(ctx context.Context, currencies []string) ([]en.Rate, error) {
 	u, err := url.Parse(c.baseURL)
 	if err != nil {
 		return nil, fmt.Errorf("invalid baseURL: %w", err)

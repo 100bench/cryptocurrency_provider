@@ -3,23 +3,13 @@ package cases
 import (
 	"context"
 	"fmt"
+	"github.com/100bench/cryptocurrency_provider.git/internal/cases/port"
 	en "github.com/100bench/cryptocurrency_provider.git/internal/entities"
 	"github.com/pkg/errors"
 )
 
-type Storage interface {
-	GetList(ctx context.Context, currencies []string) ([]en.Rate, error) // ?
-
-	// GetStats
-	//GetMax24h(ctx context.Context, currencies []string) ([]en.Rate, error)
-	//GetMin24h(ctx context.Context, currencies []string) ([]en.Rate, error)
-	//GetAvg24h(ctx context.Context, currencies []string) ([]en.Rate, error)
-	// Заменил на GetStats, получаем сразу три метода, через мапу смотрим то, что нам надо
-	GetStats(ctx context.Context, currencies []string) (map[string]en.Stats, error)
-}
-
 type StoreToClient struct {
-	store Storage
+	store port.Storage
 }
 
 func NewStoreToClient(store Storage) (*StoreToClient, error) {

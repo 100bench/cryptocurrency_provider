@@ -1,4 +1,4 @@
-package cases
+package port
 
 import (
 	"context"
@@ -6,5 +6,5 @@ import (
 )
 
 type Client interface {
-	GetRates(ctx context.Context, currencies []string) ([]en.Rate, error)
+	GetRatesFromClient(ctx context.Context, currencies []string) ([]en.Rate, error)
 }

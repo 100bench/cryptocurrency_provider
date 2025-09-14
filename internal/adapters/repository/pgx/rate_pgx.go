@@ -37,29 +37,6 @@ func (c *PgxStorage) Close() {
 }
 
 func (c *PgxStorage) GetList(ctx context.Context, currencies []string) ([]en.Rate, error) {
-	//Сформировать SQL-запрос с учётом фильтров и сортировки.
-	//query := `SELECT r.base_code,
-	//	   r.price,
-	//	   r.ts
-	//FROM rates r
-	//JOIN (
-	//	SELECT base_code, MAX(ts) AS max_ts
-	//	FROM rates
-	//	GROUP BY base_code
-	//) last_rates
-	//  ON r.base_code = last_rates.base_code
-	// AND r.ts = last_rates.max_ts
-	//WHERE r.base_code IN (SELECT code FROM symbols);`
-	//Выполнить запрос через клиент pgx, передав ctx и параметры.
-	//
-	//Обработать результат: пройти по строкам результата (rows), в каждой строке вызвать Scan.
-	//
-	//Сконвертировать данные из базы в доменные сущности (Rate).
-	//
-	//Сложить сущности в слайс для возврата.
-	//
-	//Проверить ошибки при выполнении запроса и после итерации по строкам.
-	//
-	//Закрыть rows после завершения работы.
+
 	return nil, nil
 }

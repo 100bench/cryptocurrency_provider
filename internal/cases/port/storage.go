@@ -11,5 +11,5 @@ type Storage interface {
 	Get(ctx context.Context, currencies []string, opt ...cases.Option) ([]en.Rate, error) // реализация метода
 	Save(ctx context.Context, rateChan <-chan en.Rate) error                              // save from kafka
 	// Store() реализовать метод, который будет сторить данные в список валют
-
+	Store(ctx context.Context, currencies []string) error // не уверен, что это правильно
 }

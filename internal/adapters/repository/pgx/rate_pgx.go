@@ -8,11 +8,11 @@ import (
 	"time"
 )
 
-type PgxClient struct {
+type PgxStorage struct {
 	pool *pgxpool.Pool
 }
 
-func NewPgxClient(ctx context.Context, dsn string) (*PgxClient, error) {
+func NewPgxClient(ctx context.Context, dsn string) (*PgxStorage, error) {
 	cfg, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
 		return nil, errors.Wrap(err, "pgxpool.ParseConfig")
@@ -29,14 +29,14 @@ func NewPgxClient(ctx context.Context, dsn string) (*PgxClient, error) {
 		return nil, errors.Wrap(err, "pgxpool.ConnectConfig")
 	}
 
-	return &PgxClient{pool: pool}, nil
+	return &PgxStorage{pool: pool}, nil
 }
 
-func (c *PgxClient) Close() {
+func (c *PgxStorage) Close() {
 	c.pool.Close()
 }
 
-func (c *PgxClient) GetList(ctx context.Context, currencies []string) ([]en.Rate, error) {
+func (c *PgxStorage) GetList(ctx context.Context, currencies []string) ([]en.Rate, error) {
 	//Сформировать SQL-запрос с учётом фильтров и сортировки.
 	//query := `SELECT r.base_code,
 	//	   r.price,

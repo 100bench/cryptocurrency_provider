@@ -18,7 +18,34 @@ func NewStorageService(store Storage) (*StorageService, error) {
 }
 
 func (s *StorageService) GetMinRate(ctx context.Context, currencies []string) ([]en.Rate, error) {
-	s.store.Get(ctx, currencies, WithMin())
-	return nil, nil
+	rates, err := s.store.Get(ctx, currencies, WithMin())
+	if err != nil {
+		return nil, errors.Wrap(err, "storage.Get")
+	}
+	return rates, nil
 
+}
+
+func (s *StorageService) GetMaxRate(ctx context.Context, currencies []string) ([]en.Rate, error) {
+	rates, err := s.store.Get(ctx, currencies, WithMax())
+	if err != nil {
+		return nil, errors.Wrap(err, "storage.Get")
+	}
+	return rates, nil
+}
+
+func (s *StorageService) GetAvgRate(ctx context.Context, currencies []string) ([]en.Rate, error) {
+	rates, err := s.store.Get(ctx, currencies, WithAvg())
+	if err != nil {
+		return nil, errors.Wrap(err, "storage.Get")
+	}
+	return rates, nil
+}
+
+func (s *StorageService) GetLast(ctx context.Context, currencies []string) ([]en.Rate, error) {
+	rates, err := s.store.Get(ctx, currencies)
+	if err != nil {
+		return nil, errors.Wrap(err, "storage.Get")
+	}
+	return rates, nil
 }

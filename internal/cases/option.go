@@ -14,13 +14,25 @@ func (a Aggregation) String() string {
 }
 
 type Options struct {
-	agg Aggregation
+	Agg Aggregation
 }
 
 type Option func(*Options)
 
 func WithMin() Option {
 	return func(o *Options) {
-		o.agg = AggMin
+		o.Agg = AggMin
+	}
+}
+
+func WithMax() Option {
+	return func(o *Options) {
+		o.Agg = AggMax
+	}
+}
+
+func WithAvg() Option {
+	return func(o *Options) {
+		o.Agg = AggAvg
 	}
 }

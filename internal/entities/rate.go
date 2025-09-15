@@ -6,9 +6,9 @@ import (
 )
 
 type Rate struct {
-	Currency    string
-	Price       float64 // относительно доаллара
-	CurrentTime time.Time
+	Currency string
+	Price    float64 // относительно доаллара
+	Ts       time.Time
 }
 
 func NewRate(currency string, price float64, currentTime time.Time) (*Rate, error) {

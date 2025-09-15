@@ -3,16 +3,15 @@ package cases
 import (
 	"context"
 	"fmt"
-	"github.com/100bench/cryptocurrency_provider.git/internal/cases/port"
 	en "github.com/100bench/cryptocurrency_provider.git/internal/entities"
 	"github.com/pkg/errors"
 )
 
 type Publisher struct {
-	broker port.Broker
+	broker Broker
 }
 
-func NewPublisher(pub port.Broker) (*Publisher, error) {
+func NewPublisher(pub Broker) (*Publisher, error) {
 	if pub == nil {
 		return nil, errors.Wrap(en.ErrNilDependency, "broker")
 	}

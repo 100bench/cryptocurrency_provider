@@ -2,17 +2,16 @@ package cases
 
 import (
 	"context"
-	"github.com/100bench/cryptocurrency_provider.git/internal/cases/port"
 	en "github.com/100bench/cryptocurrency_provider.git/internal/entities"
 	"github.com/pkg/errors"
 )
 
 type Consumer struct {
-	broker port.Broker
-	store  port.Storage
+	broker Broker
+	store  Storage
 }
 
-func NewConsumer(broker port.Broker) (*Consumer, error) {
+func NewConsumer(broker Broker) (*Consumer, error) {
 	if broker == nil {
 		return nil, errors.Wrap(en.ErrNilDependency, "broker.Publish")
 	}

@@ -3,16 +3,15 @@ package cases
 import (
 	"context"
 	"fmt"
-	"github.com/100bench/cryptocurrency_provider.git/internal/cases/port"
 	en "github.com/100bench/cryptocurrency_provider.git/internal/entities"
 	"github.com/pkg/errors"
 )
 
 type ServiceAPI struct {
-	client port.Client
+	client Client
 }
 
-func NewServiceAPI(prov port.Client) (*ServiceAPI, error) {
+func NewServiceAPI(prov Client) (*ServiceAPI, error) {
 	if prov == nil {
 		return nil, errors.Wrap(en.ErrNilDependency, "client")
 	}

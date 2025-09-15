@@ -1,7 +1,8 @@
-package pgx
+package postgres
 
 import (
 	"context"
+	"github.com/100bench/cryptocurrency_provider.git/internal/cases"
 	en "github.com/100bench/cryptocurrency_provider.git/internal/entities"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
@@ -36,7 +37,21 @@ func (c *PgxStorage) Close() {
 	c.pool.Close()
 }
 
-func (c *PgxStorage) GetList(ctx context.Context, currencies []string) ([]en.Rate, error) {
+func (c *PgxStorage) GetList(ctx context.Context) ([]string, error) {
 
 	return nil, nil
+}
+
+func (c *PgxStorage) Get(ctx context.Context, currencies []string, opt ...cases.Option) ([]en.Rate, error) {
+
+	return nil, nil
+}
+
+func (c *PgxStorage) Save(ctx context.Context, rateChan <-chan en.Rate) error {
+
+	return nil
+}
+
+func (c *PgxStorage) Store(ctx context.Context, currencies []string) error {
+	return nil
 }

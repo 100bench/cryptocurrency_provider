@@ -3,6 +3,7 @@ package cases
 import (
 	"context"
 	"fmt"
+
 	en "github.com/100bench/cryptocurrency_provider.git/internal/entities"
 	"github.com/pkg/errors"
 )

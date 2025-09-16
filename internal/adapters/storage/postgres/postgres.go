@@ -41,7 +41,7 @@ func (c *PgxStorage) Close() {
 
 func (c *PgxStorage) GetList(ctx context.Context) ([]string, error) {
 	const q = `
-		SELECT code FROM symbols
+		SELECT DISTINCT code FROM symbols
 	`
 	rows, err := c.pool.Query(ctx, q)
 	if err != nil {
@@ -71,11 +71,7 @@ func (c *PgxStorage) Get(ctx context.Context, currencies []string, opt ...cases.
 		}
 	}
 
-	var (
-		err   error
-		rates []en.Rate
-	)
-
+	var rates []en.Rate
 	switch cfg.Agg {
 	case cases.AggMin, cases.AggMax, cases.AggAvg:
 		fn := cfg.Agg.String() // "MIN" | "MAX" | "AVG"
@@ -88,14 +84,16 @@ func (c *PgxStorage) Get(ctx context.Context, currencies []string, opt ...cases.
 
 		rows, err := c.pool.Query(ctx, q, currencies)
 		if err != nil {
-			err = err
-			break
+			return nil, errors.Wrap(err, "pgx.query")
 		}
 		defer rows.Close()
 		rates, err = scanRates(rows)
+		if err != nil {
+			return nil, errors.Wrap(err, "scanRates")
+		}
 
 	default:
-		// «последняя котировка»
+		// последняя котировка
 		const q = `
             SELECT DISTINCT ON (base_code) base_code, price, ts
             FROM rates
@@ -104,15 +102,10 @@ func (c *PgxStorage) Get(ctx context.Context, currencies []string, opt ...cases.
         `
 		rows, err := c.pool.Query(ctx, q, currencies)
 		if err != nil {
-			err = err
-			break
+			return nil, errors.Wrap(err, "pgx.query")
 		}
 		defer rows.Close()
 		rates, err = scanRates(rows)
-	}
-
-	if err != nil {
-		return nil, errors.Wrap(err, "pgx.query")
 	}
 	return rates, nil
 }
@@ -143,45 +136,24 @@ func (c *PgxStorage) Store(ctx context.Context, currencies []string) error {
 
 func scanRates(rows pgx.Rows) ([]en.Rate, error) {
 	rates := make([]en.Rate, 0, 8)
-
-	cols := rows.FieldDescriptions()
-	switch len(cols) {
-	case 3:
-		for rows.Next() {
-			var (
-				base  string
-				price float64
-				ts    time.Time
-			)
-			if err := rows.Scan(&base, &price, &ts); err != nil {
-				return nil, fmt.Errorf("scan(3 cols): %w", err)
-			}
-			rates = append(rates, en.Rate{
-				Currency: base,
-				Price:    price,
-				Ts:       ts,
-			})
+	for rows.Next() {
+		var (
+			base  string
+			price float64
+			ts    time.Time
+		)
+		if err := rows.Scan(&base, &price, &ts); err != nil {
+			return nil, fmt.Errorf("scan: %w", err)
 		}
-	case 2:
-		for rows.Next() {
-			var (
-				base  string
-				price float64
-			)
-			if err := rows.Scan(&base, &price); err != nil {
-				return nil, fmt.Errorf("scan(2 cols): %w", err)
-			}
-			rates = append(rates, en.Rate{
-				Currency: base,
-				Price:    price,
-			})
-		}
-	default:
-		return nil, fmt.Errorf("unexpected column count: %d", len(cols))
+		rates = append(rates, en.Rate{
+			Currency: base,
+			Price:    price,
+			Ts:       ts,
+		})
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "rows.Err")
 	}
 	return rates, nil
 }

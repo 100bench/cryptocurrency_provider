@@ -48,16 +48,15 @@ func (s *Server) setupRoutes() {
 	s.router.Get("/rates/{currency}/max", s.handleGetLast)
 }
 
-// @Summary Create a new subscription
-// @Description Creates a new subscription for a user
-// @Tags subscriptions
+// @Summary Get minimum rates for currencies
+// @Description Get minimum rates for a list of currencies
+// @Tags rates
 // @Accept json
 // @Produce json
-// @Param subscription body pkg.CreateSubRequest true "Subscription"
-// @Success 201 {object} pkg.SubscriptionDTO
-// @Failure 400 {object} pkg.ErrorResponse
-// @Failure 500 {object} pkg.ErrorResponse
-// @Router /subscriptions [post]
+// @Param currencies query string true "Comma-separated list of currency symbols (e.g., BTC,ETH)"
+// @Success 200 {object} map[string]float64
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
 // @Router /rates [get]
 func (s *Server) handleGetMin(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
@@ -79,8 +78,8 @@ func (s *Server) handleGetMin(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(rates)
 }
 
-// @Summary Get minimum rates for currencies
-// @Description Get minimum rates for a list of currencies
+// @Summary Get maximum rates for currencies
+// @Description Get maximum rates for a list of currencies
 // @Tags rates
 // @Accept json
 // @Produce json
@@ -88,7 +87,7 @@ func (s *Server) handleGetMin(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} map[string]float64
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /rates [get]
+// @Router /currencies [get]
 func (s *Server) handleGetMax(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	currencies := q.Get("currencies")
@@ -109,12 +108,12 @@ func (s *Server) handleGetMax(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(rates)
 }
 
-// @Summary Get average rates for currencies
-// @Description Get average rates for a list of currencies
+// @Summary Get average rate for a currency
+// @Description Get the average rate for a specific currency
 // @Tags rates
 // @Accept json
 // @Produce json
-// @Param currencies query string true "Comma-separated list of currency symbols (e.g., BTC,ETH)"
+// @Param currency path string true "Currency symbol (e.g., BTC)"
 // @Success 200 {object} map[string]float64
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse

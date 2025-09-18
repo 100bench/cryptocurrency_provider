@@ -48,6 +48,17 @@ func (s *Server) setupRoutes() {
 	s.router.Get("/rates/{currency}/max", s.handleGetLast)
 }
 
+// @Summary Create a new subscription
+// @Description Creates a new subscription for a user
+// @Tags subscriptions
+// @Accept json
+// @Produce json
+// @Param subscription body pkg.CreateSubRequest true "Subscription"
+// @Success 201 {object} pkg.SubscriptionDTO
+// @Failure 400 {object} pkg.ErrorResponse
+// @Failure 500 {object} pkg.ErrorResponse
+// @Router /subscriptions [post]
+// @Router /rates [get]
 func (s *Server) handleGetMin(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	currencies := q.Get("currencies")
@@ -68,6 +79,16 @@ func (s *Server) handleGetMin(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(rates)
 }
 
+// @Summary Get minimum rates for currencies
+// @Description Get minimum rates for a list of currencies
+// @Tags rates
+// @Accept json
+// @Produce json
+// @Param currencies query string true "Comma-separated list of currency symbols (e.g., BTC,ETH)"
+// @Success 200 {object} map[string]float64
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /rates [get]
 func (s *Server) handleGetMax(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	currencies := q.Get("currencies")
@@ -88,18 +109,26 @@ func (s *Server) handleGetMax(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(rates)
 }
 
+// @Summary Get average rates for currencies
+// @Description Get average rates for a list of currencies
+// @Tags rates
+// @Accept json
+// @Produce json
+// @Param currencies query string true "Comma-separated list of currency symbols (e.g., BTC,ETH)"
+// @Success 200 {object} map[string]float64
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /rates/{currency}/latest [get]
 func (s *Server) handleGetAvg(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query()
-	currencies := q.Get("currencies")
-	if currencies == "" {
-		s.respondWithError(w, http.StatusBadRequest, "missing 'currencies' query parameter")
+	currency := chi.URLParam(r, "currency")
+	if currency == "" {
+		s.respondWithError(w, http.StatusBadRequest, "missing 'currency' path parameter")
 		return
 	}
-	currencyList := strings.Split(currencies, ",")
 	ctx, cancel := context.WithTimeout(r.Context(), time.Second*2)
 	defer cancel()
 
-	rates, err := s.service.GetAvgRate(ctx, currencyList)
+	rates, err := s.service.GetAvgRate(ctx, []string{currency})
 	if err != nil {
 		s.respondWithError(w, http.StatusInternalServerError, "failed to get rates")
 		return
@@ -108,6 +137,16 @@ func (s *Server) handleGetAvg(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(rates)
 }
 
+// @Summary Get last rate for a currency
+// @Description Get the last recorded rate for a specific currency
+// @Tags rates
+// @Accept json
+// @Produce json
+// @Param currency path string true "Currency symbol (e.g., BTC)"
+// @Success 200 {object} map[string]float64
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /rates/{currency}/max [get]
 func (s *Server) handleGetLast(w http.ResponseWriter, r *http.Request) {
 	currency := chi.URLParam(r, "currency")
 	if currency == "" {

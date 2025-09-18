@@ -3,12 +3,12 @@ module github.com/100bench/cryptocurrency_provider.git
 go 1.24.3
 
 require (
+	github.com/go-chi/chi/v5 v5.2.3
 	github.com/jackc/pgx/v4 v4.18.3
 	github.com/pkg/errors v0.9.1
 )
 
 require (
-	github.com/go-chi/chi/v5 v5.2.3 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.14.3 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect

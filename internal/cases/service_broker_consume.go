@@ -18,7 +18,7 @@ func NewConsumer(broker Broker) (*Consumer, error) {
 	return &Consumer{broker: broker}, nil
 }
 
-func (c *Consumer) Comsume(ctx context.Context) error {
+func (c *Consumer) Consume(ctx context.Context) error {
 	ch, err := c.broker.Consume(ctx)
 	if err != nil {
 		return errors.Wrap(err, "usecase Consumer.broker.Consume")

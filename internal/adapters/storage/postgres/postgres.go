@@ -134,6 +134,28 @@ func (c *PgxStorage) Store(ctx context.Context, currencies []string) error {
 	return nil
 }
 
+func (c *PgxStorage) GetSymbols(ctx context.Context) ([]string, error) {
+	q := `SELECT code FROM symbols WHERE kind = 'crypto';`
+	rows, err := c.pool.Query(ctx, q)
+	if err != nil {
+		return nil, errors.Wrap(err, "pgx.query")
+	}
+	defer rows.Close()
+
+	var symbols []string
+	for rows.Next() {
+		var code string
+		if err = rows.Scan(&code); err != nil {
+			return nil, errors.Wrap(err, "rows.Scan")
+		}
+		symbols = append(symbols, code)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, errors.Wrap(err, "rows.Err")
+	}
+	return symbols, nil
+}
+
 func scanRates(rows pgx.Rows) ([]en.Rate, error) {
 	rates := make([]en.Rate, 0, 8)
 	for rows.Next() {

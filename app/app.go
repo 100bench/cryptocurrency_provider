@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"github.com/100bench/cryptocurrency_provider.git/internal/cases"
+	"github.com/100bench/cryptocurrency_provider.git/scheduler/cron"
 )
 
 type Service struct {
@@ -23,5 +24,12 @@ func NewApp(api cases.ServiceAPI, consume cases.Consumer, publish cases.Publishe
 
 func (s *Service) Run() error {
 	ctx := context.Background()
-	raets, err := s.api.GetRates(ctx)
+
+	c, err := cron.StartEvery5m(ctx, s.api.GetRates) 
+	if err != nil {
+		return err
+	}
+	defer c.Stop()
+
+	return nil
 }

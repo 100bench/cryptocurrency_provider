@@ -12,8 +12,7 @@ import (
 
 func StartEvery5m(
 	ctx context.Context,
-	currencies []string,
-	getRates func(ctx context.Context, currencies []string) ([]en.Rate, error),
+	getRates func(ctx context.Context) ([]en.Rate, error),
 ) (*cron.Cron, error) {
 	c := cron.New(cron.WithChain(
 		cron.Recover(cron.DefaultLogger),
@@ -21,7 +20,7 @@ func StartEvery5m(
 
 	_, err := c.AddFunc("@every 5m", func() {
 		// исполняется в своей горутине по расписанию
-		rates, err := getRates(ctx, currencies)
+		rates, err := getRates(ctx)
 		if err != nil {
 			log.Printf("cron: getRates failed: %v", errors.WithStack(err))
 			return

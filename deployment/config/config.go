@@ -21,6 +21,9 @@ type Config struct {
 
 	// External API
 	CoinDeskAPIURL string
+
+	// HTTP Server
+	HTTPAddr string
 }
 
 func Load() *Config {
@@ -40,6 +43,8 @@ func Load() *Config {
 
 		// External API
 		CoinDeskAPIURL: getEnv("COINDESK_API_URL", "https://api.coindesk.com/v1/bpi/currentprice.json"),
+		// HTTP Server
+		HTTPAddr: getEnv("HTTP_ADDR", ":8080"),
 	}
 }
 

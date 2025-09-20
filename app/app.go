@@ -3,6 +3,10 @@ package app
 import (
 	"context"
 	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/pkg/errors"
@@ -16,7 +20,9 @@ import (
 )
 
 func RunApp() error {
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	cfg := config.Load()
 
 	// инициализация хранилища
@@ -61,18 +67,34 @@ func RunApp() error {
 	// запуск consumer для обработки сообщений из Kafka
 	go func() {
 		if err := consumerService.Consume(ctx); err != nil {
-			log.Printf("consumerservice appRun")
+			log.Printf("consumerservice appRun: %v", err)
 		}
 	}()
 
 	// запуск HTTP сервера для API
-	server, err := public.NewServer(apiService)
+	server, err := public.NewServer(storageService)
 	if err != nil {
 		return errors.Wrap(err, "public.NewServer")
 	}
-	return server.(ctx)
 
-	return nil
+	httpServer := &http.Server{
+		Addr:    cfg.HTTPAddr, // например, ":8080"
+		Handler: server,
+	}
+
+	// Graceful shutdown
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		<-stop
+		log.Println("Shutting down server...")
+		cancel()
+		ctxShutdown, cancelShutdown := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancelShutdown()
+		_ = httpServer.Shutdown(ctxShutdown)
+	}()
+
+	return httpServer.ListenAndServe()
 }
 
 func startCurrencyFetcher(ctx context.Context, apiService *cases.ServiceAPI, prodService *cases.Producer) {

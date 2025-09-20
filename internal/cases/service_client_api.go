@@ -13,11 +13,11 @@ type ServiceAPI struct {
 	storage Storage
 }
 
-func NewServiceAPI(prov Client, storage Storage) (*ServiceAPI, error) {
-	if prov == nil {
+func NewServiceAPI(client Client, storage Storage) (*ServiceAPI, error) {
+	if client == nil {
 		return nil, errors.Wrap(en.ErrNilDependency, "client")
 	}
-	return &ServiceAPI{prov, storage}, nil
+	return &ServiceAPI{client, storage}, nil
 }
 
 func (s *ServiceAPI) GetRates(ctx context.Context) ([]en.Rate, error) {

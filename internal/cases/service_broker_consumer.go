@@ -11,11 +11,14 @@ type Consumer struct {
 	store  Storage
 }
 
-func NewConsumer(broker Broker) (*Consumer, error) {
+func NewConsumer(broker Broker, store Storage) (*Consumer, error) {
 	if broker == nil {
 		return nil, errors.Wrap(en.ErrNilDependency, "broker.Publish")
 	}
-	return &Consumer{broker: broker}, nil
+	if store == nil {
+		return nil, errors.Wrap(en.ErrNilDependency, "store")
+	}
+	return &Consumer{broker: broker, store: store}, nil
 }
 
 func (c *Consumer) Consume(ctx context.Context) error {

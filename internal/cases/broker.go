@@ -6,6 +6,6 @@ import (
 )
 
 type Broker interface {
-	Publish(ctx context.Context, rates []en.Rate) error
+	Produce(ctx context.Context, rates []en.Rate) error
 	Consume(ctx context.Context) (<-chan en.Rate, error)
 }

@@ -2,34 +2,107 @@ package app
 
 import (
 	"context"
+	"log"
+	"time"
+
+	"github.com/pkg/errors"
+
+	"github.com/100bench/cryptocurrency_provider.git/deployment/config"
+	"github.com/100bench/cryptocurrency_provider.git/internal/adapters/broker/kafka"
+	"github.com/100bench/cryptocurrency_provider.git/internal/adapters/external_client/coindesk"
+	"github.com/100bench/cryptocurrency_provider.git/internal/adapters/storage/postgres"
 	"github.com/100bench/cryptocurrency_provider.git/internal/cases"
-	"github.com/100bench/cryptocurrency_provider.git/scheduler/cron"
+	"github.com/100bench/cryptocurrency_provider.git/internal/ports/http/public"
 )
 
-type Service struct {
-	api       cases.ServiceAPI
-	consumer  cases.Consumer
-	publisher cases.Publisher
-	storage   cases.Storage
-}
-
-func NewApp(api cases.ServiceAPI, consume cases.Consumer, publish cases.Publisher, storage cases.Storage) *Service {
-	return &Service{
-		api:       api,
-		consumer:  consume,
-		publisher: publish,
-		storage:   storage,
-	}
-}
-
-func (s *Service) Run() error {
+func RunApp() error {
 	ctx := context.Background()
+	cfg := config.Load()
 
-	c, err := cron.StartEvery5m(ctx, s.api.GetRates) 
+	// инициализация хранилища
+	storage, err := postgres.NewPgxClient(ctx, cfg.PostgresDSN())
 	if err != nil {
-		return err
+		return errors.Wrap(err, "postgres.NewPgxClient")
 	}
-	defer c.Stop()
+	defer storage.Close()
+
+	// инициализация внешнего клиента
+	client, err := coindesk.NewClientCoinDesk(cfg.CoinDeskAPIURL)
+	if err != nil {
+		return errors.Wrap(err, "coindesk.NewClientCoinDesk")
+	}
+	// инициализация брокера
+	broker := kafka.NewBroker(cfg.KafkaBrokers, cfg.KafkaTopic, cfg.KafkaGroupID)
+	defer func() {
+		_ = broker.Close()
+	}()
+
+	// конструкторы, продумать последовательность
+	prodService, err := cases.NewProducer(broker)
+	if err != nil {
+		return errors.Wrap(err, "cases.NewProducer")
+	}
+	storageService, err := cases.NewStorageService(storage)
+	if err != nil {
+		return errors.Wrap(err, "cases.NewStorageService")
+	}
+	consumerService, err := cases.NewConsumer(broker, storage)
+	if err != nil {
+		return errors.Wrap(err, "cases.NewConsumer")
+	}
+	apiService, err := cases.NewServiceAPI(client, storage)
+	if err != nil {
+		return errors.Wrap(err, "cases.NewServiceAPI")
+	}
+
+	// запуск периодического получения курсов валют каждые 5 минут
+	go startCurrencyFetcher(ctx, apiService, prodService)
+
+	// запуск consumer для обработки сообщений из Kafka
+	go func() {
+		if err := consumerService.Consume(ctx); err != nil {
+			log.Printf("consumerservice appRun")
+		}
+	}()
+
+	// запуск HTTP сервера для API
+	server, err := public.NewServer(apiService)
+	if err != nil {
+		return errors.Wrap(err, "public.NewServer")
+	}
+	return server.(ctx)
 
 	return nil
+}
+
+func startCurrencyFetcher(ctx context.Context, apiService *cases.ServiceAPI, prodService *cases.Producer) {
+	ticker := time.NewTicker(5 * time.Minute)
+	defer ticker.Stop()
+
+	log.Println("Starting currency fetcher - will fetch rates every 5 minutes")
+
+	for {
+		select {
+		case <-ctx.Done():
+			log.Println("Currency fetcher stopped")
+			return
+		case <-ticker.C:
+			log.Println("Fetching currency rates...")
+
+			// Получаем курсы валют
+			rates, err := apiService.GetRates(ctx)
+			if err != nil {
+				log.Printf("Failed to get rates: %v", err)
+				continue
+			}
+
+			// Отправляем в Kafka
+			if err := prodService.Produce(ctx, rates); err != nil {
+				log.Printf("Failed to produce rates to Kafka: %v", err)
+				continue
+			}
+
+			log.Printf("Successfully fetched and sent %d rates to Kafka", len(rates))
+		}
+	}
 }

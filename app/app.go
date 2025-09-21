@@ -27,6 +27,7 @@ func RunApp() error {
 
 	// инициализация хранилища
 	storage, err := postgres.NewPgxClient(ctx, cfg.PostgresDSN())
+	log.Printf("connection string %s", cfg.PostgresDSN())
 	if err != nil {
 		return errors.Wrap(err, "postgres.NewPgxClient")
 	}
@@ -34,35 +35,46 @@ func RunApp() error {
 
 	// инициализация внешнего клиента
 	client, err := coindesk.NewClientCoinDesk(cfg.CoinDeskAPIURL)
+	log.Printf("coindesk client %s", cfg.CoinDeskAPIURL)
+
 	if err != nil {
 		return errors.Wrap(err, "coindesk.NewClientCoinDesk")
 	}
+
 	// инициализация брокера
-	broker := kafka.NewBroker(cfg.KafkaBrokers, cfg.KafkaTopic, cfg.KafkaGroupID)
+	broker, err := kafka.NewBroker(cfg.KafkaBrokers, cfg.KafkaTopic, cfg.KafkaGroupID)
+	log.Printf("kafka broker %s", cfg.KafkaBrokers)
+	if err != nil {
+		return errors.Wrap(err, "kafka.NewBroker")
+	}
 	defer func() {
 		_ = broker.Close()
 	}()
 
-	// конструкторы, продумать последовательность
+	// конструкторы
 	prodService, err := cases.NewProducer(broker)
+	log.Printf("producer")
 	if err != nil {
 		return errors.Wrap(err, "cases.NewProducer")
 	}
 	storageService, err := cases.NewStorageService(storage)
+	log.Printf("storage service")
 	if err != nil {
 		return errors.Wrap(err, "cases.NewStorageService")
 	}
 	consumerService, err := cases.NewConsumer(broker, storage)
+	log.Printf("consumer service")
 	if err != nil {
 		return errors.Wrap(err, "cases.NewConsumer")
 	}
 	apiService, err := cases.NewServiceAPI(client, storage)
+	log.Printf("api service")
 	if err != nil {
 		return errors.Wrap(err, "cases.NewServiceAPI")
 	}
 
-	// запуск периодического получения курсов валют каждые 5 минут
-	go startCurrencyFetcher(ctx, apiService, prodService)
+	// запуск периодического получения курсов валют с настраиваемым интервалом
+	go startCurrencyFetcher(ctx, apiService, prodService, cfg.FetchInterval)
 
 	// запуск consumer для обработки сообщений из Kafka
 	go func() {
@@ -73,23 +85,25 @@ func RunApp() error {
 
 	// запуск HTTP сервера для API
 	server, err := public.NewServer(storageService)
+	log.Printf("server statr %v", server)
 	if err != nil {
 		return errors.Wrap(err, "public.NewServer")
 	}
 
 	httpServer := &http.Server{
-		Addr:    cfg.HTTPAddr, // например, ":8080"
+		Addr:    cfg.HTTPAddr,
 		Handler: server,
 	}
+	log.Printf("application started")
 
-	// Graceful shutdown
+	// graceful shutdown
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		<-stop
 		log.Println("Shutting down server...")
 		cancel()
-		ctxShutdown, cancelShutdown := context.WithTimeout(context.Background(), 5*time.Second)
+		ctxShutdown, cancelShutdown := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
 		defer cancelShutdown()
 		_ = httpServer.Shutdown(ctxShutdown)
 	}()
@@ -97,11 +111,11 @@ func RunApp() error {
 	return httpServer.ListenAndServe()
 }
 
-func startCurrencyFetcher(ctx context.Context, apiService *cases.ServiceAPI, prodService *cases.Producer) {
-	ticker := time.NewTicker(5 * time.Minute)
+func startCurrencyFetcher(ctx context.Context, apiService *cases.ServiceAPI, prodService *cases.Producer, fetchInterval time.Duration) {
+	ticker := time.NewTicker(fetchInterval)
 	defer ticker.Stop()
 
-	log.Println("Starting currency fetcher - will fetch rates every 5 minutes")
+	log.Printf("Starting currency fetcher - will fetch rates every %v", fetchInterval)
 
 	for {
 		select {

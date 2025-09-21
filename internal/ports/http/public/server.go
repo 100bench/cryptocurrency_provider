@@ -42,34 +42,32 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) setupRoutes() {
-	s.router.Get("/rates", s.handleGetMin)
-	s.router.Get("/currencies", s.handleGetMax)
-	s.router.Get("/rates/{currency}/latest", s.handleGetAvg)
-	s.router.Get("/rates/{currency}/max", s.handleGetLast)
+	s.router.Get("/rates/latest", s.handleGetLast)
+	s.router.Get("/rates/{currency}/min", s.handleGetMin)
+	s.router.Get("/rates/{currency}/max", s.handleGetMax)
+	s.router.Get("/rates/{currency}/avg", s.handleGetAvg)
 }
 
-// @Summary Get minimum rates for currencies
-// @Description Get minimum rates for a list of currencies
+// @Summary Get minimum rate for a currency
+// @Description Get minimum rate for a specific currency
 // @Tags rates
 // @Accept json
 // @Produce json
-// @Param currencies query string true "Comma-separated list of currency symbols (e.g., BTC,ETH)"
+// @Param currency path string true "Currency symbol (e.g., BTC)"
 // @Success 200 {object} map[string]float64
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /rates [get]
+// @Router /rates/{currency}/min [get]
 func (s *Server) handleGetMin(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query()
-	currencies := q.Get("currencies")
-	if currencies == "" {
-		s.respondWithError(w, http.StatusBadRequest, "missing 'currencies' query parameter")
+	currency := chi.URLParam(r, "currency")
+	if currency == "" {
+		s.respondWithError(w, http.StatusBadRequest, "missing 'currency' path parameter")
 		return
 	}
-	currencyList := strings.Split(currencies, ",")
 	ctx, cancel := context.WithTimeout(r.Context(), time.Second*2)
 	defer cancel()
 
-	rates, err := s.service.GetMinRate(ctx, currencyList)
+	rates, err := s.service.GetMinRate(ctx, []string{currency})
 	if err != nil {
 		s.respondWithError(w, http.StatusInternalServerError, "failed to get rates")
 		return
@@ -78,8 +76,8 @@ func (s *Server) handleGetMin(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(rates)
 }
 
-// @Summary Get maximum rates for currencies
-// @Description Get maximum rates for a list of currencies
+// @Summary Get latest rates for currencies
+// @Description Get latest rates for a list of currencies
 // @Tags rates
 // @Accept json
 // @Produce json
@@ -87,8 +85,8 @@ func (s *Server) handleGetMin(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} map[string]float64
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /currencies [get]
-func (s *Server) handleGetMax(w http.ResponseWriter, r *http.Request) {
+// @Router /rates/latest [get]
+func (s *Server) handleGetLast(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	currencies := q.Get("currencies")
 	if currencies == "" {
@@ -99,7 +97,35 @@ func (s *Server) handleGetMax(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), time.Second*2)
 	defer cancel()
 
-	rates, err := s.service.GetMaxRate(ctx, currencyList)
+	rates, err := s.service.GetLast(ctx, currencyList)
+	if err != nil {
+		s.respondWithError(w, http.StatusInternalServerError, "failed to get rates")
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(rates)
+}
+
+// @Summary Get maximum rate for a currency
+// @Description Get maximum rate for a specific currency
+// @Tags rates
+// @Accept json
+// @Produce json
+// @Param currency path string true "Currency symbol (e.g., BTC)"
+// @Success 200 {object} map[string]float64
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /rates/{currency}/max [get]
+func (s *Server) handleGetMax(w http.ResponseWriter, r *http.Request) {
+	currency := chi.URLParam(r, "currency")
+	if currency == "" {
+		s.respondWithError(w, http.StatusBadRequest, "missing 'currency' path parameter")
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), time.Second*2)
+	defer cancel()
+
+	rates, err := s.service.GetMaxRate(ctx, []string{currency})
 	if err != nil {
 		s.respondWithError(w, http.StatusInternalServerError, "failed to get rates")
 		return
@@ -109,7 +135,7 @@ func (s *Server) handleGetMax(w http.ResponseWriter, r *http.Request) {
 }
 
 // @Summary Get average rate for a currency
-// @Description Get the average rate for a specific currency
+// @Description Get average rate for a specific currency
 // @Tags rates
 // @Accept json
 // @Produce json
@@ -117,7 +143,7 @@ func (s *Server) handleGetMax(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} map[string]float64
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /rates/{currency}/latest [get]
+// @Router /rates/{currency}/avg [get]
 func (s *Server) handleGetAvg(w http.ResponseWriter, r *http.Request) {
 	currency := chi.URLParam(r, "currency")
 	if currency == "" {
@@ -128,34 +154,6 @@ func (s *Server) handleGetAvg(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	rates, err := s.service.GetAvgRate(ctx, []string{currency})
-	if err != nil {
-		s.respondWithError(w, http.StatusInternalServerError, "failed to get rates")
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(rates)
-}
-
-// @Summary Get last rate for a currency
-// @Description Get the last recorded rate for a specific currency
-// @Tags rates
-// @Accept json
-// @Produce json
-// @Param currency path string true "Currency symbol (e.g., BTC)"
-// @Success 200 {object} map[string]float64
-// @Failure 400 {object} dto.ErrorResponse
-// @Failure 500 {object} dto.ErrorResponse
-// @Router /rates/{currency}/max [get]
-func (s *Server) handleGetLast(w http.ResponseWriter, r *http.Request) {
-	currency := chi.URLParam(r, "currency")
-	if currency == "" {
-		s.respondWithError(w, http.StatusBadRequest, "missing 'currency' path parameter")
-		return
-	}
-	ctx, cancel := context.WithTimeout(r.Context(), time.Second*2)
-	defer cancel()
-
-	rates, err := s.service.GetLast(ctx, []string{currency})
 	if err != nil {
 		s.respondWithError(w, http.StatusInternalServerError, "failed to get rates")
 		return

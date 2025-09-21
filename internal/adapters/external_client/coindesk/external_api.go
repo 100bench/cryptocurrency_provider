@@ -7,6 +7,7 @@ import (
 	en "github.com/100bench/cryptocurrency_provider.git/internal/entities"
 	"github.com/pkg/errors"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -32,6 +33,7 @@ func NewClientCoinDesk(baseURL string) (*ClientCoinDesk, error) {
 }
 
 func (c *ClientCoinDesk) GetRatesFromClient(ctx context.Context, currencies []string) ([]en.Rate, error) {
+	log.Printf("GetRatesFromClient currencies: %v", currencies)
 	u, err := url.Parse(c.baseURL)
 	if err != nil {
 		return nil, fmt.Errorf("invalid baseURL: %w", err)
@@ -51,22 +53,22 @@ func (c *ClientCoinDesk) GetRatesFromClient(ctx context.Context, currencies []st
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, errors.Wrap(err, "provider cryptocompare: do request")
+		return nil, errors.Wrap(err, "provider coindesk: do request")
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		b, err := io.ReadAll(io.LimitReader(resp.Body, 4<<10))
-		return nil, errors.Wrapf(err, "cryptocompare status=%d body=%s", resp.StatusCode, string(b)) // ?
+		return nil, errors.Wrapf(err, "coindesk status=%d body=%s", resp.StatusCode, string(b)) // ?
 	}
 
 	b, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, errors.Wrap(err, "provider cryptocompare: read body")
+		return nil, errors.Wrap(err, "provider coindesk: read body")
 	}
 
 	var raw map[string]map[string]float64
 	if err := json.Unmarshal(b, &raw); err != nil {
-		return nil, errors.Wrap(err, "cryptocompare: decode json")
+		return nil, errors.Wrap(err, "coindesk: decode json")
 	}
 
 	rates := make([]en.Rate, 0, len(raw))
@@ -76,10 +78,11 @@ func (c *ClientCoinDesk) GetRatesFromClient(ctx context.Context, currencies []st
 		for _, vv := range v {
 			rate, err := en.NewRate(k, vv, ts)
 			if err != nil {
-				return nil, fmt.Errorf("cryptocompare: new rate: %w", err)
+				return nil, fmt.Errorf("coindesk: new rate: %w", err)
 			}
 			rates = append(rates, *rate)
 		}
 	}
+	log.Printf("coindesk rates: %v", rates)
 	return rates, nil
 }

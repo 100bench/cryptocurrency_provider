@@ -1,0 +1,21 @@
+# Currency Deliver Configuration
+# Этот файл содержит настройки по умолчанию для приложения
+# Переменные окружения имеют приоритет над значениями в этом файле
+
+# Database Configuration
+connection_string: "postgres://postgres:12341234@postgres:5432/currency_db?sslmode=disable"
+
+# Kafka Configuration
+kafka_brokers: ["kafka:9092"]
+kafka_topic: "currency-rates"
+kafka_group_id: "currency-consumer-group"
+
+# External API Configuration
+coindesk_api_url: "https://min-api.cryptocompare.com/data/pricemulti"
+
+# HTTP Server Configuration
+http_addr: ":8080"
+
+# Application Settings
+fetch_interval: "10s"      # Интервал обновления курсов валют
+shutdown_timeout: "5s"    # Таймаут для graceful shutdown

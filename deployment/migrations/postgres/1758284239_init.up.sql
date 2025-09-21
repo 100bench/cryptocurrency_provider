@@ -14,4 +14,11 @@ CREATE TABLE rates (
     UNIQUE (base_code, ts)                                 -- идемпотентность по времени
 );
 
+-- Добавляем базовые валюты
+INSERT INTO symbols (code, kind) VALUES 
+    ('BTC', 'crypto'),
+    ('ETH', 'crypto'),
+    ('USD', 'fiat')
+ON CONFLICT (code) DO NOTHING;
+
 END;

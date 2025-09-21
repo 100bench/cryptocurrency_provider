@@ -3,6 +3,7 @@ package kafka
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	en "github.com/100bench/cryptocurrency_provider.git/internal/entities"
@@ -14,13 +15,26 @@ type Broker struct {
 	reader *kafka.Reader
 }
 
-func NewBroker(brokers []string, topic, group string) *Broker {
+func NewBroker(brokers []string, topic, group string) (*Broker, error) {
+	if len(brokers) == 0 {
+		return nil, fmt.Errorf("no brokers provided")
+	}
+	if topic == "" {
+		return nil, fmt.Errorf("topic is required")
+	}
+	if group == "" {
+		return nil, fmt.Errorf("group ID is required")
+	}
+
 	w := &kafka.Writer{
 		Addr:         kafka.TCP(brokers...),
 		Topic:        topic,
 		Balancer:     &kafka.LeastBytes{},
 		RequiredAcks: kafka.RequireAll,
+		WriteTimeout: 10 * time.Second,
+		ReadTimeout:  10 * time.Second,
 	}
+
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:        brokers,
 		Topic:          topic,
@@ -28,8 +42,10 @@ func NewBroker(brokers []string, topic, group string) *Broker {
 		MinBytes:       1,
 		MaxBytes:       10e6,
 		CommitInterval: time.Second,
+		StartOffset:    kafka.LastOffset,
 	})
-	return &Broker{writer: w, reader: r}
+
+	return &Broker{writer: w, reader: r}, nil
 }
 
 func (b *Broker) Produce(ctx context.Context, rates []en.Rate) error {

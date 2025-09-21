@@ -2,61 +2,66 @@ package config
 
 import (
 	"fmt"
-	"os"
+	"time"
+
+	"github.com/spf13/viper"
 )
 
 type Config struct {
-	// Database
-	DBHost     string
-	DBPort     string
-	DBUser     string
-	DBPassword string
-	DBName     string
-	DBSSLMode  string
-
 	// Kafka
-	KafkaBrokers []string
-	KafkaTopic   string
-	KafkaGroupID string
+	KafkaBrokers []string `mapstructure:"kafka_brokers"`
+	KafkaTopic   string   `mapstructure:"kafka_topic"`
+	KafkaGroupID string   `mapstructure:"kafka_group_id"`
 
 	// External API
-	CoinDeskAPIURL string
+	CoinDeskAPIURL string `mapstructure:"coindesk_api_url"`
 
 	// HTTP Server
-	HTTPAddr string
+	HTTPAddr string `mapstructure:"http_addr"`
+
+	// Fetch settings
+	FetchInterval   time.Duration `mapstructure:"fetch_interval"`
+	ShutdownTimeout time.Duration `mapstructure:"shutdown_timeout"`
+}
+
+var v *viper.Viper
+
+func init() {
+	v = viper.New()
+
+	// Настройка Viper
+	v.SetConfigName("config")
+	v.SetConfigType("yaml")
+	v.AddConfigPath("./deployment/config")
+	v.AddConfigPath("./config")
+	v.AddConfigPath(".")
+
 }
 
 func Load() *Config {
-	return &Config{
-		// Database
-		DBHost:     getEnv("DB_HOST", "localhost"),
-		DBPort:     getEnv("DB_PORT", "5432"),
-		DBUser:     getEnv("DB_USER", "postgres"),
-		DBPassword: getEnv("DB_PASSWORD", "password"),
-		DBName:     getEnv("DB_NAME", "currency_db"),
-		DBSSLMode:  getEnv("DB_SSL_MODE", "disable"),
-
-		// Kafka
-		KafkaBrokers: []string{getEnv("KAFKA_BROKERS", "localhost:9092")},
-		KafkaTopic:   getEnv("KAFKA_TOPIC", "currency-rates"),
-		KafkaGroupID: getEnv("KAFKA_GROUP_ID", "currency-consumer-group"),
-
-		// External API
-		CoinDeskAPIURL: getEnv("COINDESK_API_URL", "https://api.coindesk.com/v1/bpi/currentprice.json"),
-		// HTTP Server
-		HTTPAddr: getEnv("HTTP_ADDR", ":8080"),
+	// Читаем конфигурационный файл
+	if err := v.ReadInConfig(); err != nil {
+		// Если файл не найден, используем только переменные окружения и defaults
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			panic(fmt.Errorf("fatal error config file: %w", err))
+		}
 	}
-}
 
-func getEnv(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
+	var config Config
+	if err := v.Unmarshal(&config); err != nil {
+		panic(fmt.Errorf("unable to decode config into struct: %w", err))
 	}
-	return defaultValue
+
+	return &config
 }
 
 // PostgresDSN возвращает DSN строку для подключения к PostgreSQL
 func (c *Config) PostgresDSN() string {
-	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
-		c.DBHost, c.DBPort, c.DBUser, c.DBPassword, c.DBName, c.DBSSLMode)
+	connString := v.GetString("connection_string")
+	return connString
+}
+
+// GetViper возвращает экземпляр Viper для дополнительных операций
+func GetViper() *viper.Viper {
+	return v
 }
